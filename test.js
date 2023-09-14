@@ -4,6 +4,13 @@
 import {rollup} from 'rollup';
 import config from './rollup.config.js';
 
+import process from 'process';
+if (process.send) {
+  process.on('SIGINT', () => {
+    // Do nothing, parent process will send sigterm if necessary.
+  });
+}
+
 const bundle = await rollup(config);
 await bundle.generate(config.output);
 await bundle.write(config.output);

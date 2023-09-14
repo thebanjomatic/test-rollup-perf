@@ -6,8 +6,11 @@ import {performance} from 'perf_hooks';
 import process from 'process';
 import {basename, join} from 'path';
 
+let childProcess;
 async function testRollup() {
-  await execaNode('./test.js');
+  childProcess = execaNode('./test.js');
+  await childProcess;
+  childProcess = undefined;
 }
 
 function getStats(times) {
@@ -41,7 +44,8 @@ process.on('SIGINT', () => {
     process.exit(0);
   }
   else if (requestedShutdown) {
-    process.exit(1);
+    childProcess?.kill('SIGTERM');
+    process.exit(0);
   } else {
     requestedShutdown = true;
     console.log('Shutting down after all test cases have finished the current iteration... [Ctrl+C] again to force shutdown');
