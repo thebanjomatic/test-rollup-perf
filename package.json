@@ -1,0 +1,33 @@
+{
+  "name": "test-rollup-perf",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node profile.js 3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebanjomatic/test-rollup-perf.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thebanjomatic/test-rollup-perf/issues"
+  },
+  "homepage": "https://github.com/thebanjomatic/test-rollup-perf#readme",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.1",
+    "d3": "^7.8.5",
+    "execa": "^8.0.1",
+    "lodash-es": "^4.17.21",
+    "rollup": "^3.29.1",
+    "three": "^0.156.1"
+  }
+}
