@@ -16,9 +16,7 @@ async function testRollup() {
 function getStats(times) {
   const mean = times.reduce((acc, time) => acc + time, 0) / times.length;
   const stdDev = times.length > 1 ? Math.sqrt(times.reduce((acc, time) => acc + Math.pow(time - mean, 2), 0) / (times.length - 1)) : 0;
-  times.sort((a, b) => a - b);
-  const median = times[Math.floor(times.length / 2)];
-  return {mean, stdDev, median};
+  return {mean, stdDev};
 }
 
 async function runTest(i, iterations, testName, log, execTestCase, times, timeout) {
@@ -31,9 +29,9 @@ async function runTest(i, iterations, testName, log, execTestCase, times, timeou
   const end = performance.now();
   const buildTime = (end - start) / 1000;
   times.push(buildTime);
-  const {mean, median, stdDev} = getStats(times);
+  const {mean, stdDev} = getStats(times);
   const count = (i + 1).toString().padStart(padSize);
-  log(`${count} / ${iterations} | Last: ${buildTime.toFixed(precision)} s | Average: ${mean.toFixed(precision)} s | Median: ${median.toFixed(precision)} | StdDev: ${stdDev.toFixed(precision)} s`);
+  log(`${count} / ${iterations} | Last: ${buildTime.toFixed(precision)} s | Average: ${mean.toFixed(precision)} s | StdDev: ${stdDev.toFixed(precision)} s`);
   await setTimeout(timeout);
 }
 
@@ -52,7 +50,7 @@ process.on('SIGINT', () => {
   }
 })
 
-function printSummary(testName, {mean, median, stdDev}) {
+function printSummary(testName, {mean, stdDev}) {
   console.log();
   console.log(`${testName} results:`);
   console.log(`Average Build Time: ${mean} seconds`);
