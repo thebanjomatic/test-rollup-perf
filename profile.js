@@ -1,6 +1,7 @@
 import {execaNode} from 'execa';
 import {setTimeout} from 'timers/promises';
-import {copyFile, writeFile, readdir, open} from 'fs/promises';
+import {copyFile, writeFile, readdir, open, mkdir} from 'fs/promises';
+import {existsSync} from 'fs';
 import {performance} from 'perf_hooks';
 import process from 'process';
 import {basename, join} from 'path';
@@ -58,6 +59,10 @@ function printSummary(testName, {mean, median, stdDev}) {
 
 
 const iterations = Number.parseInt(process.argv[2] ?? '50');
+
+if (!existsSync('./results')) {
+  await mkdir('./results');
+}
 
 const inputs = await readdir('./rollup-tests');
 const testNames = inputs.map((input) => basename(input, '.js'));
