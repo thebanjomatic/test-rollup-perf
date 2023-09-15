@@ -32,7 +32,7 @@ async function runTest(i, iterations, testName, log, execTestCase, times, timeou
   times.push(buildTime);
   const {mean, stdDev, median} = getStats(times);
   const count = (i + 1).toString().padStart(padSize);
-  log(`${count} / ${iterations} | Last: ${buildTime.toFixed(precision)} s | Average: ${mean.toFixed(precision)} s | StdDev: ${stdDev.toFixed(precision)} s | Median: ${median().toFixed(precision)} s`);
+  log(`${count} / ${iterations} | Last: ${buildTime.toFixed(precision)} s | Average: ${mean.toFixed(precision)} s | StdDev: ${stdDev.toFixed(precision)} s | Median: ${median.toFixed(precision)} s`);
   await setTimeout(timeout);
 }
 
