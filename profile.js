@@ -54,7 +54,6 @@ function printSummary(testName, {mean, stdDev}) {
   console.log();
   console.log(`${testName} results:`);
   console.log(`Average Build Time: ${mean} seconds`);
-  console.log(`Median Build Time: ${median} seconds`);
   console.log(`Standard Deviation: ${stdDev} seconds`);
   console.log();
 }
