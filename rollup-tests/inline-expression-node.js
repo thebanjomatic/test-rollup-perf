@@ -1,7 +1,7 @@
 /*
   @license
 	Rollup.js v3.29.1
-	Fri, 15 Sep 2023 22:25:02 GMT - commit 8277fce3960792cde8fba11951fb5ae6397596a2
+	Fri, 15 Sep 2023 22:09:52 GMT - commit 8277fce3960792cde8fba11951fb5ae6397596a2
 
 	https://github.com/rollup/rollup
 
@@ -6156,28 +6156,32 @@ const METHOD_RETURNS_UNKNOWN = [
     })
 ];
 
+function isFlagSet(flags, flag) {
+    return (flags & flag) !== 0;
+}
+function setFlag(flags, flag, value) {
+    return (flags & ~flag) | (-value & flag);
+}
+
 const INTEGER_REG_EXP = /^\d+$/;
 class ObjectEntity extends ExpressionEntity {
     get hasLostTrack() {
-        return (this.flags & 2048 /* Flag.hasLostTrack */) !== 0;
+        return isFlagSet(this.flags, 2048 /* Flag.hasLostTrack */);
     }
     set hasLostTrack(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~2048 /* Flag.hasLostTrack */) | (-value & 2048 /* Flag.hasLostTrack */);
+        this.flags = setFlag(this.flags, 2048 /* Flag.hasLostTrack */, value);
     }
     get hasUnknownDeoptimizedInteger() {
-        return (this.flags & 4096 /* Flag.hasUnknownDeoptimizedInteger */) !== 0;
+        return isFlagSet(this.flags, 4096 /* Flag.hasUnknownDeoptimizedInteger */);
     }
     set hasUnknownDeoptimizedInteger(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~4096 /* Flag.hasUnknownDeoptimizedInteger */) | (-value & 4096 /* Flag.hasUnknownDeoptimizedInteger */);
+        this.flags = setFlag(this.flags, 4096 /* Flag.hasUnknownDeoptimizedInteger */, value);
     }
     get hasUnknownDeoptimizedProperty() {
-        return (this.flags & 8192 /* Flag.hasUnknownDeoptimizedProperty */) !== 0;
+        return isFlagSet(this.flags, 8192 /* Flag.hasUnknownDeoptimizedProperty */);
     }
     set hasUnknownDeoptimizedProperty(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~8192 /* Flag.hasUnknownDeoptimizedProperty */) | (-value & 8192 /* Flag.hasUnknownDeoptimizedProperty */);
+        this.flags = setFlag(this.flags, 8192 /* Flag.hasUnknownDeoptimizedProperty */, value);
     }
     // If a PropertyMap is used, this will be taken as propertiesAndGettersByKey
     // and we assume there are no setters or getters
@@ -8348,15 +8352,14 @@ class Identifier extends NodeBase {
         this.variable = null;
     }
     get isTDZAccess() {
-        if ((this.flags & 4 /* Flag.tdzAccessDefined */) === 0) {
+        if (!isFlagSet(this.flags, 4 /* Flag.tdzAccessDefined */)) {
             return null;
         }
-        return (this.flags & 8 /* Flag.tdzAccess */) !== 0;
+        return isFlagSet(this.flags, 8 /* Flag.tdzAccess */);
     }
     set isTDZAccess(value) {
-        let oldFlag = this.flags;
-        oldFlag |= 4 /* Flag.tdzAccessDefined */;
-        this.flags = (oldFlag & ~8 /* Flag.tdzAccess */) | (-value & 8 /* Flag.tdzAccess */);
+        this.flags = setFlag(this.flags, 4 /* Flag.tdzAccessDefined */, true);
+        this.flags = setFlag(this.flags, 8 /* Flag.tdzAccess */, value);
     }
     addExportedVariables(variables, exportNamesByVariable) {
         if (exportNamesByVariable.has(this.variable)) {
@@ -8752,18 +8755,16 @@ class ExpressionStatement extends NodeBase {
 
 class BlockStatement extends NodeBase {
     get deoptimizeBody() {
-        return (this.flags & 32768 /* Flag.deoptimizeBody */) !== 0;
+        return isFlagSet(this.flags, 32768 /* Flag.deoptimizeBody */);
     }
     set deoptimizeBody(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~32768 /* Flag.deoptimizeBody */) | (-value & 32768 /* Flag.deoptimizeBody */);
+        this.flags = setFlag(this.flags, 32768 /* Flag.deoptimizeBody */, value);
     }
     get directlyIncluded() {
-        return (this.flags & 16384 /* Flag.directlyIncluded */) !== 0;
+        return isFlagSet(this.flags, 16384 /* Flag.directlyIncluded */);
     }
     set directlyIncluded(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~16384 /* Flag.directlyIncluded */) | (-value & 16384 /* Flag.directlyIncluded */);
+        this.flags = setFlag(this.flags, 16384 /* Flag.directlyIncluded */, value);
     }
     addImplicitReturnExpressionToScope() {
         const lastStatement = this.body[this.body.length - 1];
@@ -8852,18 +8853,16 @@ class FunctionBase extends NodeBase {
         this.objectEntity = null;
     }
     get async() {
-        return (this.flags & 256 /* Flag.async */) !== 0;
+        return isFlagSet(this.flags, 256 /* Flag.async */);
     }
     set async(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~256 /* Flag.async */) | (-value & 256 /* Flag.async */);
+        this.flags = setFlag(this.flags, 256 /* Flag.async */, value);
     }
     get deoptimizedReturn() {
-        return (this.flags & 512 /* Flag.deoptimizedReturn */) !== 0;
+        return isFlagSet(this.flags, 512 /* Flag.deoptimizedReturn */);
     }
     set deoptimizedReturn(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~512 /* Flag.deoptimizedReturn */) | (-value & 512 /* Flag.deoptimizedReturn */);
+        this.flags = setFlag(this.flags, 512 /* Flag.deoptimizedReturn */, value);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         if (interaction.type === INTERACTION_CALLED) {
@@ -9599,39 +9598,34 @@ class MemberExpression extends NodeBase {
         this.expressionsToBeDeoptimized = [];
     }
     get computed() {
-        return (this.flags & 1024 /* Flag.computed */) !== 0;
+        return isFlagSet(this.flags, 1024 /* Flag.computed */);
     }
     set computed(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~1024 /* Flag.computed */) | (-value & 1024 /* Flag.computed */);
+        this.flags = setFlag(this.flags, 1024 /* Flag.computed */, value);
     }
     get optional() {
-        return (this.flags & 128 /* Flag.optional */) !== 0;
+        return isFlagSet(this.flags, 128 /* Flag.optional */);
     }
     set optional(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~128 /* Flag.optional */) | (-value & 128 /* Flag.optional */);
+        this.flags = setFlag(this.flags, 128 /* Flag.optional */, value);
     }
     get assignmentDeoptimized() {
-        return (this.flags & 16 /* Flag.assignmentDeoptimized */) !== 0;
+        return isFlagSet(this.flags, 16 /* Flag.assignmentDeoptimized */);
     }
     set assignmentDeoptimized(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~16 /* Flag.assignmentDeoptimized */) | (-value & 16 /* Flag.assignmentDeoptimized */);
+        this.flags = setFlag(this.flags, 16 /* Flag.assignmentDeoptimized */, value);
     }
     get bound() {
-        return (this.flags & 32 /* Flag.bound */) !== 0;
+        return isFlagSet(this.flags, 32 /* Flag.bound */);
     }
     set bound(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~32 /* Flag.bound */) | (-value & 32 /* Flag.bound */);
+        this.flags = setFlag(this.flags, 32 /* Flag.bound */, value);
     }
     get isUndefined() {
-        return (this.flags & 64 /* Flag.isUndefined */) !== 0;
+        return isFlagSet(this.flags, 64 /* Flag.isUndefined */);
     }
     set isUndefined(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~64 /* Flag.isUndefined */) | (-value & 64 /* Flag.isUndefined */);
+        this.flags = setFlag(this.flags, 64 /* Flag.isUndefined */, value);
     }
     bind() {
         this.bound = true;
@@ -9987,11 +9981,10 @@ class CallExpressionBase extends NodeBase {
 
 class CallExpression extends CallExpressionBase {
     get optional() {
-        return (this.flags & 128 /* Flag.optional */) !== 0;
+        return isFlagSet(this.flags, 128 /* Flag.optional */);
     }
     set optional(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~128 /* Flag.optional */) | (-value & 128 /* Flag.optional */);
+        this.flags = setFlag(this.flags, 128 /* Flag.optional */, value);
     }
     bind() {
         super.bind();
@@ -10161,11 +10154,10 @@ class MethodBase extends NodeBase {
         this.accessedValue = null;
     }
     get computed() {
-        return (this.flags & 1024 /* Flag.computed */) !== 0;
+        return isFlagSet(this.flags, 1024 /* Flag.computed */);
     }
     set computed(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~1024 /* Flag.computed */) | (-value & 1024 /* Flag.computed */);
+        this.flags = setFlag(this.flags, 1024 /* Flag.computed */, value);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         if (interaction.type === INTERACTION_ACCESSED && this.kind === 'get' && path.length === 0) {
@@ -10461,11 +10453,10 @@ class ConditionalExpression extends NodeBase {
         this.usedBranch = null;
     }
     get isBranchResolutionAnalysed() {
-        return (this.flags & 65536 /* Flag.isBranchResolutionAnalysed */) !== 0;
+        return isFlagSet(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */);
     }
     set isBranchResolutionAnalysed(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~65536 /* Flag.isBranchResolutionAnalysed */) | (-value & 65536 /* Flag.isBranchResolutionAnalysed */);
+        this.flags = setFlag(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */, value);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.consequent.deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
@@ -10857,11 +10848,10 @@ class ForInStatement extends NodeBase {
 
 class ForOfStatement extends NodeBase {
     get await() {
-        return (this.flags & 131072 /* Flag.await */) !== 0;
+        return isFlagSet(this.flags, 131072 /* Flag.await */);
     }
     set await(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~131072 /* Flag.await */) | (-value & 131072 /* Flag.await */);
+        this.flags = setFlag(this.flags, 131072 /* Flag.await */, value);
     }
     createScope(parentScope) {
         this.scope = new BlockScope(parentScope, parentScope.context);
@@ -11761,11 +11751,10 @@ class LogicalExpression extends NodeBase {
     }
     //private isBranchResolutionAnalysed = false;
     get isBranchResolutionAnalysed() {
-        return (this.flags & 65536 /* Flag.isBranchResolutionAnalysed */) !== 0;
+        return isFlagSet(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */);
     }
     set isBranchResolutionAnalysed(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~65536 /* Flag.isBranchResolutionAnalysed */) | (-value & 65536 /* Flag.isBranchResolutionAnalysed */);
+        this.flags = setFlag(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */, value);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.left.deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
@@ -12217,19 +12206,17 @@ class Property extends MethodBase {
     }
     //declare method: boolean;
     get method() {
-        return (this.flags & 262144 /* Flag.method */) !== 0;
+        return isFlagSet(this.flags, 262144 /* Flag.method */);
     }
     set method(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~262144 /* Flag.method */) | (-value & 262144 /* Flag.method */);
+        this.flags = setFlag(this.flags, 262144 /* Flag.method */, value);
     }
     //declare shorthand: boolean;
     get shorthand() {
-        return (this.flags & 524288 /* Flag.shorthand */) !== 0;
+        return isFlagSet(this.flags, 524288 /* Flag.shorthand */);
     }
     set shorthand(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~524288 /* Flag.shorthand */) | (-value & 524288 /* Flag.shorthand */);
+        this.flags = setFlag(this.flags, 524288 /* Flag.shorthand */, value);
     }
     declare(kind, init) {
         this.declarationInit = init;
@@ -12264,11 +12251,10 @@ class Property extends MethodBase {
 
 class PropertyDefinition extends NodeBase {
     get computed() {
-        return (this.flags & 1024 /* Flag.computed */) !== 0;
+        return isFlagSet(this.flags, 1024 /* Flag.computed */);
     }
     set computed(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~1024 /* Flag.computed */) | (-value & 1024 /* Flag.computed */);
+        this.flags = setFlag(this.flags, 1024 /* Flag.computed */, value);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.value?.deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
@@ -12621,11 +12607,10 @@ class TaggedTemplateExpression extends CallExpressionBase {
 
 class TemplateElement extends NodeBase {
     get tail() {
-        return (this.flags & 1048576 /* Flag.tail */) !== 0;
+        return isFlagSet(this.flags, 1048576 /* Flag.tail */);
     }
     set tail(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~1048576 /* Flag.tail */) | (-value & 1048576 /* Flag.tail */);
+        this.flags = setFlag(this.flags, 1048576 /* Flag.tail */, value);
     }
     // Do not try to bind value
     bind() { }
@@ -12886,11 +12871,10 @@ const unaryOperators = {
 };
 class UnaryExpression extends NodeBase {
     get prefix() {
-        return (this.flags & 2097152 /* Flag.prefix */) !== 0;
+        return isFlagSet(this.flags, 2097152 /* Flag.prefix */);
     }
     set prefix(value) {
-        const oldFlag = this.flags;
-        this.flags = (oldFlag & ~2097152 /* Flag.prefix */) | (-value & 2097152 /* Flag.prefix */);
+        this.flags = setFlag(this.flags, 2097152 /* Flag.prefix */, value);
     }
     getLiteralValueAtPath(path, recursionTracker, origin) {
         if (path.length > 0)
