@@ -15,7 +15,7 @@ async function testRollup() {
 
 function getStats(times) {
   const mean = times.length > 0 ? times.reduce((acc, time) => acc + time, 0) / times.length : 0;
-  const stdDev = times.length > 0 ? Math.sqrt(times.reduce((acc, time) => acc + Math.pow(time - mean, 2), 0) / (times.length)) : 0;
+  const stdDev = times.length > 1 ? Math.sqrt(times.reduce((acc, time) => acc + Math.pow(time - mean, 2), 0) / (times.length - 1)) : 0;
   const sortedTimes = times.slice().sort((a, b) => a - b);
   const median = (sortedTimes[(sortedTimes.length - 1) >> 1] + sortedTimes[sortedTimes.length >> 1]) / 2;
   return {mean, stdDev, median};
