@@ -14,11 +14,13 @@ async function testRollup() {
 }
 
 function getStats(times) {
+  const min =  Math.min(...times);
+  const max = Math.max(...times);
   const mean = times.length > 0 ? times.reduce((acc, time) => acc + time, 0) / times.length : 0;
   const stdDev = times.length > 1 ? Math.sqrt(times.reduce((acc, time) => acc + Math.pow(time - mean, 2), 0) / (times.length - 1)) : 0;
   const sortedTimes = times.slice().sort((a, b) => a - b);
   const median = (sortedTimes[(sortedTimes.length - 1) >> 1] + sortedTimes[sortedTimes.length >> 1]) / 2;
-  return {mean, stdDev, median};
+  return {min, max, mean, stdDev, median};
 }
 
 async function runTest(i, iterations, testName, log, execTestCase, times, timeout) {
@@ -30,9 +32,9 @@ async function runTest(i, iterations, testName, log, execTestCase, times, timeou
   const end = performance.now();
   const buildTime = (end - start) / 1000;
   times.push(buildTime);
-  const {mean, stdDev, median} = getStats(times);
+  const {min, max, mean, stdDev, median} = getStats(times);
   const count = (i + 1).toString().padStart(padSize);
-  log(`${count} / ${iterations} | Last: ${buildTime.toFixed(precision)} s | Average: ${mean.toFixed(precision)} s | StdDev: ${stdDev.toFixed(precision)} s | Median: ${median.toFixed(precision)} s`);
+  log(`${count} / ${iterations} | Last: ${buildTime.toFixed(precision)} s | Minimum: ${min.toFixed(precision)} | Maximum: ${max.toFixed(precision)} | Average: ${mean.toFixed(precision)} s | StdDev: ${stdDev.toFixed(precision)} s | Median: ${median.toFixed(precision)} s`);
   await setTimeout(timeout);
 }
 
@@ -50,9 +52,11 @@ process.on('SIGINT', () => {
   }
 })
 
-function printSummary(testName, {mean, stdDev, median}) {
+function printSummary(testName, {min, max, mean, stdDev, median}) {
   console.log();
   console.log(`${testName} results:`);
+  console.log(`Minimum Build Time: ${min} seconds`);
+  console.log(`Maximum Build Time: ${max} seconds`);
   console.log(`Average Build Time: ${mean} seconds`);
   console.log(`Standard Deviation: ${stdDev} seconds`);
   console.log(`Median Build Time: ${median} seconds`);
