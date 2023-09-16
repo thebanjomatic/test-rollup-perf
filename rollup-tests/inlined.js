@@ -1,7 +1,7 @@
 /*
   @license
 	Rollup.js v3.29.1
-	Wed, 13 Sep 2023 22:25:31 GMT - commit 995fbe83b56600d222cc8519533dd33620851d51
+	Fri, 15 Sep 2023 22:25:02 GMT - commit 8277fce3960792cde8fba11951fb5ae6397596a2
 
 	https://github.com/rollup/rollup
 
@@ -1858,13 +1858,6 @@ class DiscriminatedPathTracker {
     }
 }
 
-function isFlagSet(flags, flag) {
-    return (flags & flag) !== 0;
-}
-function setFlag(flags, flag, value) {
-    return (flags & ~flag) | (-value & flag);
-}
-
 const UnknownValue = Symbol('Unknown Value');
 const UnknownTruthyValue = Symbol('Unknown Truthy Value');
 class ExpressionEntity {
@@ -1872,10 +1865,10 @@ class ExpressionEntity {
         this.flags = 0;
     }
     get included() {
-        return isFlagSet(this.flags, 1 /* Flag.included */);
+        return (this.flags & 1 /* Flag.included */) !== 0;
     }
-    set included(value) {
-        this.flags = setFlag(this.flags, 1 /* Flag.included */, value);
+    set included(_value) {
+        this.flags |= 1 /* Flag.included */;
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, _path, _recursionTracker) {
         deoptimizeInteraction(interaction);
@@ -5876,10 +5869,10 @@ class NodeBase extends ExpressionEntity {
      * custom handlers
      */
     get deoptimized() {
-        return isFlagSet(this.flags, 2 /* Flag.deoptimized */);
+        return (this.flags & 2 /* Flag.deoptimized */) !== 0;
     }
-    set deoptimized(value) {
-        this.flags = setFlag(this.flags, 2 /* Flag.deoptimized */, value);
+    set deoptimized(_value) {
+        this.flags |= 2 /* Flag.deoptimized */;
     }
     constructor(esTreeNode, parent, parentScope, keepEsTreeNode = false) {
         super();
@@ -5930,7 +5923,7 @@ class NodeBase extends ExpressionEntity {
             this.applyDeoptimizations();
         for (const key of keys[this.type]) {
             const value = this[key];
-            if (value == null)
+            if (value === null)
                 continue;
             if (Array.isArray(value)) {
                 for (const child of value) {
@@ -5953,7 +5946,7 @@ class NodeBase extends ExpressionEntity {
         this.included = true;
         for (const key of keys[this.type]) {
             const value = this[key];
-            if (value == null)
+            if (value === null)
                 continue;
             if (Array.isArray(value)) {
                 for (const child of value) {
@@ -6000,15 +5993,13 @@ class NodeBase extends ExpressionEntity {
                         this.context.magicString.remove(start, end);
                 }
             }
-            else if (value == null) ;
-            else if (typeof value !== 'object') {
-                // Note: typeof null === 'object' as well, but that is handled in the case above.
+            else if (typeof value !== 'object' || value === null) {
                 this[key] = value;
             }
             else if (Array.isArray(value)) {
                 this[key] = [];
                 for (const child of value) {
-                    this[key].push(child == null
+                    this[key].push(child === null
                         ? null
                         : new (this.context.getNodeConstructor(child.type))(child, this, this.scope, keepEsTreeNodeKeys?.includes(key)));
                 }
@@ -6021,7 +6012,7 @@ class NodeBase extends ExpressionEntity {
     render(code, options) {
         for (const key of keys[this.type]) {
             const value = this[key];
-            if (value == null)
+            if (value === null)
                 continue;
             if (Array.isArray(value)) {
                 for (const child of value) {
@@ -6048,7 +6039,7 @@ class NodeBase extends ExpressionEntity {
         this.deoptimized = true;
         for (const key of keys[this.type]) {
             const value = this[key];
-            if (value == null)
+            if (value === null)
                 continue;
             if (Array.isArray(value)) {
                 for (const child of value) {
@@ -6168,22 +6159,25 @@ const METHOD_RETURNS_UNKNOWN = [
 const INTEGER_REG_EXP = /^\d+$/;
 class ObjectEntity extends ExpressionEntity {
     get hasLostTrack() {
-        return isFlagSet(this.flags, 2048 /* Flag.hasLostTrack */);
+        return (this.flags & 2048 /* Flag.hasLostTrack */) !== 0;
     }
     set hasLostTrack(value) {
-        this.flags = setFlag(this.flags, 2048 /* Flag.hasLostTrack */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~2048 /* Flag.hasLostTrack */) | (-value & 2048 /* Flag.hasLostTrack */);
     }
     get hasUnknownDeoptimizedInteger() {
-        return isFlagSet(this.flags, 4096 /* Flag.hasUnknownDeoptimizedInteger */);
+        return (this.flags & 4096 /* Flag.hasUnknownDeoptimizedInteger */) !== 0;
     }
     set hasUnknownDeoptimizedInteger(value) {
-        this.flags = setFlag(this.flags, 4096 /* Flag.hasUnknownDeoptimizedInteger */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~4096 /* Flag.hasUnknownDeoptimizedInteger */) | (-value & 4096 /* Flag.hasUnknownDeoptimizedInteger */);
     }
     get hasUnknownDeoptimizedProperty() {
-        return isFlagSet(this.flags, 8192 /* Flag.hasUnknownDeoptimizedProperty */);
+        return (this.flags & 8192 /* Flag.hasUnknownDeoptimizedProperty */) !== 0;
     }
     set hasUnknownDeoptimizedProperty(value) {
-        this.flags = setFlag(this.flags, 8192 /* Flag.hasUnknownDeoptimizedProperty */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~8192 /* Flag.hasUnknownDeoptimizedProperty */) | (-value & 8192 /* Flag.hasUnknownDeoptimizedProperty */);
     }
     // If a PropertyMap is used, this will be taken as propertiesAndGettersByKey
     // and we assume there are no setters or getters
@@ -6700,7 +6694,7 @@ const ARRAY_PROTOTYPE = new ObjectEntity({
 class ArrayExpression extends NodeBase {
     constructor() {
         super(...arguments);
-        this.objectEntity = undefined;
+        this.objectEntity = null;
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
@@ -6730,7 +6724,7 @@ class ArrayExpression extends NodeBase {
         this.context.requestTreeshakingPass();
     }
     getObjectEntity() {
-        if (this.objectEntity !== undefined) {
+        if (this.objectEntity !== null) {
             return this.objectEntity;
         }
         const properties = [
@@ -8349,15 +8343,20 @@ const tdzVariableKinds = {
     var: true
 };
 class Identifier extends NodeBase {
+    constructor() {
+        super(...arguments);
+        this.variable = null;
+    }
     get isTDZAccess() {
-        if (!isFlagSet(this.flags, 4 /* Flag.tdzAccessDefined */)) {
+        if ((this.flags & 4 /* Flag.tdzAccessDefined */) === 0) {
             return null;
         }
-        return isFlagSet(this.flags, 8 /* Flag.tdzAccess */);
+        return (this.flags & 8 /* Flag.tdzAccess */) !== 0;
     }
     set isTDZAccess(value) {
-        this.flags = setFlag(this.flags, 4 /* Flag.tdzAccessDefined */, true);
-        this.flags = setFlag(this.flags, 8 /* Flag.tdzAccess */, value);
+        let oldFlag = this.flags;
+        oldFlag |= 4 /* Flag.tdzAccessDefined */;
+        this.flags = (oldFlag & ~8 /* Flag.tdzAccess */) | (-value & 8 /* Flag.tdzAccess */);
     }
     addExportedVariables(variables, exportNamesByVariable) {
         if (exportNamesByVariable.has(this.variable)) {
@@ -8438,7 +8437,7 @@ class Identifier extends NodeBase {
     hasEffectsOnInteractionAtPath(path, interaction, context) {
         switch (interaction.type) {
             case INTERACTION_ACCESSED: {
-                return (this.variable !== undefined &&
+                return (this.variable !== null &&
                     !this.isPureFunction(path) &&
                     this.getVariableRespectingTDZ().hasEffectsOnInteractionAtPath(path, interaction, context));
             }
@@ -8456,7 +8455,7 @@ class Identifier extends NodeBase {
             this.applyDeoptimizations();
         if (!this.included) {
             this.included = true;
-            if (this.variable !== undefined) {
+            if (this.variable !== null) {
                 this.context.includeVariableInModule(this.variable);
             }
         }
@@ -8753,16 +8752,18 @@ class ExpressionStatement extends NodeBase {
 
 class BlockStatement extends NodeBase {
     get deoptimizeBody() {
-        return isFlagSet(this.flags, 32768 /* Flag.deoptimizeBody */);
+        return (this.flags & 32768 /* Flag.deoptimizeBody */) !== 0;
     }
     set deoptimizeBody(value) {
-        this.flags = setFlag(this.flags, 32768 /* Flag.deoptimizeBody */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~32768 /* Flag.deoptimizeBody */) | (-value & 32768 /* Flag.deoptimizeBody */);
     }
     get directlyIncluded() {
-        return isFlagSet(this.flags, 16384 /* Flag.directlyIncluded */);
+        return (this.flags & 16384 /* Flag.directlyIncluded */) !== 0;
     }
     set directlyIncluded(value) {
-        this.flags = setFlag(this.flags, 16384 /* Flag.directlyIncluded */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~16384 /* Flag.directlyIncluded */) | (-value & 16384 /* Flag.directlyIncluded */);
     }
     addImplicitReturnExpressionToScope() {
         const lastStatement = this.body[this.body.length - 1];
@@ -8815,6 +8816,10 @@ class BlockStatement extends NodeBase {
 }
 
 class RestElement extends NodeBase {
+    constructor() {
+        super(...arguments);
+        this.declarationInit = null;
+    }
     addExportedVariables(variables, exportNamesByVariable) {
         this.argument.addExportedVariables(variables, exportNamesByVariable);
     }
@@ -8834,7 +8839,7 @@ class RestElement extends NodeBase {
     }
     applyDeoptimizations() {
         this.deoptimized = true;
-        if (this.declarationInit !== undefined) {
+        if (this.declarationInit !== null) {
             this.declarationInit.deoptimizePath([UnknownKey, UnknownKey]);
             this.context.requestTreeshakingPass();
         }
@@ -8842,17 +8847,23 @@ class RestElement extends NodeBase {
 }
 
 class FunctionBase extends NodeBase {
+    constructor() {
+        super(...arguments);
+        this.objectEntity = null;
+    }
     get async() {
-        return isFlagSet(this.flags, 256 /* Flag.async */);
+        return (this.flags & 256 /* Flag.async */) !== 0;
     }
     set async(value) {
-        this.flags = setFlag(this.flags, 256 /* Flag.async */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~256 /* Flag.async */) | (-value & 256 /* Flag.async */);
     }
     get deoptimizedReturn() {
-        return isFlagSet(this.flags, 512 /* Flag.deoptimizedReturn */);
+        return (this.flags & 512 /* Flag.deoptimizedReturn */) !== 0;
     }
     set deoptimizedReturn(value) {
-        this.flags = setFlag(this.flags, 512 /* Flag.deoptimizedReturn */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~512 /* Flag.deoptimizedReturn */) | (-value & 512 /* Flag.deoptimizedReturn */);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         if (interaction.type === INTERACTION_CALLED) {
@@ -8965,6 +8976,10 @@ class FunctionBase extends NodeBase {
 FunctionBase.prototype.preventChildBlockScope = true;
 
 class ArrowFunctionExpression extends FunctionBase {
+    constructor() {
+        super(...arguments);
+        this.objectEntity = null;
+    }
     createScope(parentScope) {
         this.scope = new ReturnValueScope(parentScope, this.context);
     }
@@ -9005,7 +9020,7 @@ class ArrowFunctionExpression extends FunctionBase {
         }
     }
     getObjectEntity() {
-        if (this.objectEntity !== undefined) {
+        if (this.objectEntity !== null) {
             return this.objectEntity;
         }
         return (this.objectEntity = new ObjectEntity([], OBJECT_PROTOTYPE));
@@ -9264,6 +9279,10 @@ class FunctionScope extends ReturnValueScope {
 }
 
 class FunctionNode extends FunctionBase {
+    constructor() {
+        super(...arguments);
+        this.objectEntity = null;
+    }
     createScope(parentScope) {
         this.scope = new FunctionScope(parentScope, this.context);
         this.constructedEntity = new ObjectEntity(Object.create(null), OBJECT_PROTOTYPE);
@@ -9334,7 +9353,7 @@ class FunctionNode extends FunctionBase {
         this.scope.argumentsVariable.addArgumentToBeDeoptimized(argument);
     }
     getObjectEntity() {
-        if (this.objectEntity != undefined) {
+        if (this.objectEntity !== null) {
             return this.objectEntity;
         }
         return (this.objectEntity = new ObjectEntity([
@@ -9489,7 +9508,7 @@ class Literal extends NodeBase {
     getLiteralValueAtPath(path) {
         if (path.length > 0 ||
             // unknown literals can also be null but do not start with an "n"
-            (this.value == null && this.context.code.charCodeAt(this.start) !== 110) ||
+            (this.value === null && this.context.code.charCodeAt(this.start) !== 110) ||
             typeof this.value === 'bigint' ||
             // to support shims for regular expressions
             this.context.code.charCodeAt(this.start) === 47) {
@@ -9505,7 +9524,7 @@ class Literal extends NodeBase {
     hasEffectsOnInteractionAtPath(path, interaction, context) {
         switch (interaction.type) {
             case INTERACTION_ACCESSED: {
-                return path.length > (this.value == null ? 0 : 1);
+                return path.length > (this.value === null ? 0 : 1);
             }
             case INTERACTION_ASSIGNED: {
                 return true;
@@ -9547,7 +9566,7 @@ function getResolvableComputedPropertyKey(propertyKey) {
     if (propertyKey instanceof Literal) {
         return String(propertyKey.value);
     }
-    return undefined;
+    return null;
 }
 function getPathIfNotComputed(memberExpression) {
     const nextPathKey = memberExpression.propertyKey;
@@ -9576,37 +9595,43 @@ function getStringFromPath(path) {
 class MemberExpression extends NodeBase {
     constructor() {
         super(...arguments);
+        this.variable = null;
         this.expressionsToBeDeoptimized = [];
     }
     get computed() {
-        return isFlagSet(this.flags, 1024 /* Flag.computed */);
+        return (this.flags & 1024 /* Flag.computed */) !== 0;
     }
     set computed(value) {
-        this.flags = setFlag(this.flags, 1024 /* Flag.computed */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~1024 /* Flag.computed */) | (-value & 1024 /* Flag.computed */);
     }
     get optional() {
-        return isFlagSet(this.flags, 128 /* Flag.optional */);
+        return (this.flags & 128 /* Flag.optional */) !== 0;
     }
     set optional(value) {
-        this.flags = setFlag(this.flags, 128 /* Flag.optional */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~128 /* Flag.optional */) | (-value & 128 /* Flag.optional */);
     }
     get assignmentDeoptimized() {
-        return isFlagSet(this.flags, 16 /* Flag.assignmentDeoptimized */);
+        return (this.flags & 16 /* Flag.assignmentDeoptimized */) !== 0;
     }
     set assignmentDeoptimized(value) {
-        this.flags = setFlag(this.flags, 16 /* Flag.assignmentDeoptimized */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~16 /* Flag.assignmentDeoptimized */) | (-value & 16 /* Flag.assignmentDeoptimized */);
     }
     get bound() {
-        return isFlagSet(this.flags, 32 /* Flag.bound */);
+        return (this.flags & 32 /* Flag.bound */) !== 0;
     }
     set bound(value) {
-        this.flags = setFlag(this.flags, 32 /* Flag.bound */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~32 /* Flag.bound */) | (-value & 32 /* Flag.bound */);
     }
     get isUndefined() {
-        return isFlagSet(this.flags, 64 /* Flag.isUndefined */);
+        return (this.flags & 64 /* Flag.isUndefined */) !== 0;
     }
     set isUndefined(value) {
-        this.flags = setFlag(this.flags, 64 /* Flag.isUndefined */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~64 /* Flag.isUndefined */) | (-value & 64 /* Flag.isUndefined */);
     }
     bind() {
         this.bound = true;
@@ -9818,7 +9843,7 @@ class MemberExpression extends NodeBase {
         }
     }
     getPropertyKey() {
-        if (this.propertyKey === undefined) {
+        if (this.propertyKey === null) {
             this.propertyKey = UnknownKey;
             const value = this.property.getLiteralValueAtPath(EMPTY_PATH, SHARED_RECURSION_TRACKER, this);
             return (this.propertyKey =
@@ -9870,6 +9895,7 @@ function resolveNamespaceVariables(baseVariable, path, astContext) {
 class CallExpressionBase extends NodeBase {
     constructor() {
         super(...arguments);
+        this.returnExpression = null;
         this.deoptimizableDependentExpressions = [];
         this.expressionsToBeDeoptimized = new Set();
     }
@@ -9961,10 +9987,11 @@ class CallExpressionBase extends NodeBase {
 
 class CallExpression extends CallExpressionBase {
     get optional() {
-        return isFlagSet(this.flags, 128 /* Flag.optional */);
+        return (this.flags & 128 /* Flag.optional */) !== 0;
     }
     set optional(value) {
-        this.flags = setFlag(this.flags, 128 /* Flag.optional */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~128 /* Flag.optional */) | (-value & 128 /* Flag.optional */);
     }
     bind() {
         super.bind();
@@ -10040,7 +10067,7 @@ class CallExpression extends CallExpressionBase {
         this.context.requestTreeshakingPass();
     }
     getReturnExpression(recursionTracker = SHARED_RECURSION_TRACKER) {
-        if (this.returnExpression === undefined) {
+        if (this.returnExpression === null) {
             this.returnExpression = UNKNOWN_RETURN_EXPRESSION;
             return (this.returnExpression = this.callee.getReturnExpressionWhenCalledAtPath(EMPTY_PATH, this.interaction, recursionTracker, this));
         }
@@ -10129,11 +10156,16 @@ class ClassBody extends NodeBase {
 }
 
 class MethodBase extends NodeBase {
+    constructor() {
+        super(...arguments);
+        this.accessedValue = null;
+    }
     get computed() {
-        return isFlagSet(this.flags, 1024 /* Flag.computed */);
+        return (this.flags & 1024 /* Flag.computed */) !== 0;
     }
     set computed(value) {
-        this.flags = setFlag(this.flags, 1024 /* Flag.computed */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~1024 /* Flag.computed */) | (-value & 1024 /* Flag.computed */);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         if (interaction.type === INTERACTION_ACCESSED && this.kind === 'get' && path.length === 0) {
@@ -10187,7 +10219,7 @@ class MethodBase extends NodeBase {
     }
     applyDeoptimizations() { }
     getAccessedValue() {
-        if (this.accessedValue === undefined) {
+        if (this.accessedValue === null) {
             if (this.kind === 'get') {
                 this.accessedValue = UNKNOWN_RETURN_EXPRESSION;
                 return (this.accessedValue = this.value.getReturnExpressionWhenCalledAtPath(EMPTY_PATH, NODE_INTERACTION_UNKNOWN_CALL, SHARED_RECURSION_TRACKER, this));
@@ -10228,6 +10260,10 @@ class ObjectMember extends ExpressionEntity {
 }
 
 class ClassNode extends NodeBase {
+    constructor() {
+        super(...arguments);
+        this.objectEntity = null;
+    }
     createScope(parentScope) {
         this.scope = new ChildScope(parentScope, parentScope.context);
     }
@@ -10256,7 +10292,7 @@ class ClassNode extends NodeBase {
     hasEffectsOnInteractionAtPath(path, interaction, context) {
         return interaction.type === INTERACTION_CALLED && path.length === 0
             ? !interaction.withNew ||
-                (this.classConstructor === undefined
+                (this.classConstructor === null
                     ? this.superClass?.hasEffectsOnInteractionAtPath(path, interaction, context)
                     : this.classConstructor.hasEffectsOnInteractionAtPath(path, interaction, context)) ||
                 false
@@ -10281,7 +10317,7 @@ class ClassNode extends NodeBase {
                 return;
             }
         }
-        this.classConstructor = undefined;
+        this.classConstructor = null;
     }
     applyDeoptimizations() {
         this.deoptimized = true;
@@ -10295,7 +10331,7 @@ class ClassNode extends NodeBase {
         this.context.requestTreeshakingPass();
     }
     getObjectEntity() {
-        if (this.objectEntity !== undefined) {
+        if (this.objectEntity !== null) {
             return this.objectEntity;
         }
         const staticProperties = [];
@@ -10338,12 +10374,12 @@ class ClassNode extends NodeBase {
 class ClassDeclaration extends ClassNode {
     initialise() {
         super.initialise();
-        if (this.id != undefined) {
+        if (this.id !== null) {
             this.id.variable.isId = true;
         }
     }
     parseNode(esTreeNode) {
-        if (esTreeNode.id != undefined) {
+        if (esTreeNode.id !== null) {
             this.id = new Identifier(esTreeNode.id, this, this.scope.parent);
         }
         super.parseNode(esTreeNode);
@@ -10397,7 +10433,6 @@ class MultiExpression extends ExpressionEntity {
     constructor(expressions) {
         super();
         this.expressions = expressions;
-        this.included = false;
     }
     deoptimizePath(path) {
         for (const expression of this.expressions) {
@@ -10423,21 +10458,23 @@ class ConditionalExpression extends NodeBase {
     constructor() {
         super(...arguments);
         this.expressionsToBeDeoptimized = [];
+        this.usedBranch = null;
     }
     get isBranchResolutionAnalysed() {
-        return isFlagSet(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */);
+        return (this.flags & 65536 /* Flag.isBranchResolutionAnalysed */) !== 0;
     }
     set isBranchResolutionAnalysed(value) {
-        this.flags = setFlag(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~65536 /* Flag.isBranchResolutionAnalysed */) | (-value & 65536 /* Flag.isBranchResolutionAnalysed */);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.consequent.deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
         this.alternate.deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
     }
     deoptimizeCache() {
-        if (this.usedBranch !== undefined) {
+        if (this.usedBranch !== null) {
             const unusedBranch = this.usedBranch === this.consequent ? this.alternate : this.consequent;
-            this.usedBranch = undefined;
+            this.usedBranch = null;
             unusedBranch.deoptimizePath(UNKNOWN_PATH);
             const { expressionsToBeDeoptimized } = this;
             this.expressionsToBeDeoptimized = EMPTY_ARRAY;
@@ -10496,9 +10533,7 @@ class ConditionalExpression extends NodeBase {
     include(context, includeChildrenRecursively) {
         this.included = true;
         const usedBranch = this.getUsedBranch();
-        if (includeChildrenRecursively ||
-            this.test.shouldBeIncluded(context) ||
-            usedBranch === undefined) {
+        if (includeChildrenRecursively || this.test.shouldBeIncluded(context) || usedBranch === null) {
             this.test.include(context, includeChildrenRecursively);
             this.consequent.include(context, includeChildrenRecursively);
             this.alternate.include(context, includeChildrenRecursively);
@@ -10552,7 +10587,7 @@ class ConditionalExpression extends NodeBase {
         this.isBranchResolutionAnalysed = true;
         const testValue = this.test.getLiteralValueAtPath(EMPTY_PATH, SHARED_RECURSION_TRACKER, this);
         return typeof testValue === 'symbol'
-            ? undefined
+            ? null
             : (this.usedBranch = testValue ? this.consequent : this.alternate);
     }
 }
@@ -10647,12 +10682,12 @@ ExportAllDeclaration.prototype.needsBoundaries = true;
 class FunctionDeclaration extends FunctionNode {
     initialise() {
         super.initialise();
-        if (this.id != null) {
+        if (this.id !== null) {
             this.id.variable.isId = true;
         }
     }
     parseNode(esTreeNode) {
-        if (esTreeNode.id != null) {
+        if (esTreeNode.id !== null) {
             this.id = new Identifier(esTreeNode.id, this, this.scope.parent);
         }
         super.parseNode(esTreeNode);
@@ -10690,12 +10725,12 @@ class ExportDefaultDeclaration extends NodeBase {
         const { start, end } = nodeRenderOptions;
         const declarationStart = getDeclarationStart(code.original, this.start);
         if (this.declaration instanceof FunctionDeclaration) {
-            this.renderNamedDeclaration(code, declarationStart, this.declaration.id === undefined
+            this.renderNamedDeclaration(code, declarationStart, this.declaration.id === null
                 ? getFunctionIdInsertPosition(code.original, declarationStart)
                 : null, options);
         }
         else if (this.declaration instanceof ClassDeclaration) {
-            this.renderNamedDeclaration(code, declarationStart, this.declaration.id === undefined
+            this.renderNamedDeclaration(code, declarationStart, this.declaration.id === null
                 ? findFirstOccurrenceOutsideComment(code.original, 'class', start) + 'class'.length
                 : null, options);
         }
@@ -10764,7 +10799,7 @@ class ExportNamedDeclaration extends NodeBase {
     }
     render(code, options, nodeRenderOptions) {
         const { start, end } = nodeRenderOptions;
-        if (this.declaration === undefined) {
+        if (this.declaration === null) {
             code.remove(start, end);
         }
         else {
@@ -10822,10 +10857,11 @@ class ForInStatement extends NodeBase {
 
 class ForOfStatement extends NodeBase {
     get await() {
-        return isFlagSet(this.flags, 131072 /* Flag.await */);
+        return (this.flags & 131072 /* Flag.await */) !== 0;
     }
     set await(value) {
-        this.flags = setFlag(this.flags, 131072 /* Flag.await */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~131072 /* Flag.await */) | (-value & 131072 /* Flag.await */);
     }
     createScope(parentScope) {
         this.scope = new BlockScope(parentScope, parentScope.context);
@@ -10934,7 +10970,7 @@ class IfStatement extends NodeBase {
             // eslint-disable-next-line unicorn/consistent-destructuring
             const consequentBrokenFlow = context.brokenFlow;
             context.brokenFlow = brokenFlow;
-            if (this.alternate === undefined)
+            if (this.alternate === null)
                 return false;
             if (this.alternate.hasEffects(context))
                 return true;
@@ -11389,7 +11425,12 @@ class VariableDeclarator extends NodeBase {
 class ImportExpression extends NodeBase {
     constructor() {
         super(...arguments);
+        this.inlineNamespace = null;
+        this.assertions = null;
         this.mechanism = null;
+        this.namespaceExportName = undefined;
+        this.resolution = null;
+        this.resolutionString = null;
     }
     // Do not bind assertions
     bind() {
@@ -11528,13 +11569,14 @@ class ImportExpression extends NodeBase {
     }
     setExternalResolution(exportMode, resolution, options, snippets, pluginDriver, accessedGlobalsByScope, resolutionString, namespaceExportName, assertions) {
         const { format } = options;
-        this.resolution = resolution ?? undefined;
+        this.inlineNamespace = null;
+        this.resolution = resolution;
         this.resolutionString = resolutionString;
-        this.namespaceExportName = namespaceExportName ?? undefined;
-        this.assertions = assertions ?? undefined;
+        this.namespaceExportName = namespaceExportName;
+        this.assertions = assertions;
         const accessedGlobals = [...(accessedImportGlobals[format] || [])];
-        let helper = null;
-        ({ helper, mechanism: this.mechanism } = this.getDynamicImportMechanismAndHelper(resolution ?? undefined, exportMode, options, snippets, pluginDriver));
+        let helper;
+        ({ helper, mechanism: this.mechanism } = this.getDynamicImportMechanismAndHelper(resolution, exportMode, options, snippets, pluginDriver));
         if (helper) {
             accessedGlobals.push(helper);
         }
@@ -11713,15 +11755,17 @@ class LabeledStatement extends NodeBase {
 class LogicalExpression extends NodeBase {
     constructor() {
         super(...arguments);
-        // We collect deoptimization information if usedBranch !== undefined
+        // We collect deoptimization information if usedBranch !== null
         this.expressionsToBeDeoptimized = [];
+        this.usedBranch = null;
     }
     //private isBranchResolutionAnalysed = false;
     get isBranchResolutionAnalysed() {
-        return isFlagSet(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */);
+        return (this.flags & 65536 /* Flag.isBranchResolutionAnalysed */) !== 0;
     }
     set isBranchResolutionAnalysed(value) {
-        this.flags = setFlag(this.flags, 65536 /* Flag.isBranchResolutionAnalysed */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~65536 /* Flag.isBranchResolutionAnalysed */) | (-value & 65536 /* Flag.isBranchResolutionAnalysed */);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.left.deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
@@ -11730,7 +11774,7 @@ class LogicalExpression extends NodeBase {
     deoptimizeCache() {
         if (this.usedBranch) {
             const unusedBranch = this.usedBranch === this.left ? this.right : this.left;
-            this.usedBranch = undefined;
+            this.usedBranch = null;
             unusedBranch.deoptimizePath(UNKNOWN_PATH);
             const { context, expressionsToBeDeoptimized } = this;
             this.expressionsToBeDeoptimized = EMPTY_ARRAY;
@@ -11854,6 +11898,12 @@ class LogicalExpression extends NodeBase {
 const FILE_PREFIX = 'ROLLUP_FILE_URL_';
 const IMPORT = 'import';
 class MetaProperty extends NodeBase {
+    constructor() {
+        super(...arguments);
+        this.metaProperty = null;
+        this.preliminaryChunkId = null;
+        this.referenceId = null;
+    }
     getReferencedFileName(outputPluginDriver) {
         const { meta: { name }, metaProperty } = this;
         if (name === IMPORT && metaProperty?.startsWith(FILE_PREFIX)) {
@@ -11876,7 +11926,7 @@ class MetaProperty extends NodeBase {
                 const metaProperty = (this.metaProperty =
                     parent instanceof MemberExpression && typeof parent.propertyKey === 'string'
                         ? parent.propertyKey
-                        : undefined);
+                        : null);
                 if (metaProperty?.startsWith(FILE_PREFIX)) {
                     this.referenceId = metaProperty.slice(FILE_PREFIX.length);
                 }
@@ -11885,7 +11935,7 @@ class MetaProperty extends NodeBase {
     }
     render(code, renderOptions) {
         const { format, pluginDriver, snippets } = renderOptions;
-        const { context: { module }, meta: { name }, metaProperty = null, parent, preliminaryChunkId, referenceId, start, end } = this;
+        const { context: { module }, meta: { name }, metaProperty, parent, preliminaryChunkId, referenceId, start, end } = this;
         const { id: moduleId } = module;
         if (name !== IMPORT)
             return;
@@ -12026,6 +12076,10 @@ class NewExpression extends NodeBase {
 }
 
 class ObjectExpression extends NodeBase {
+    constructor() {
+        super(...arguments);
+        this.objectEntity = null;
+    }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.getObjectEntity().deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
     }
@@ -12054,7 +12108,7 @@ class ObjectExpression extends NodeBase {
     }
     applyDeoptimizations() { }
     getObjectEntity() {
-        if (this.objectEntity !== undefined) {
+        if (this.objectEntity !== null) {
             return this.objectEntity;
         }
         let prototype = OBJECT_PROTOTYPE;
@@ -12157,19 +12211,25 @@ class Program extends NodeBase {
 }
 
 class Property extends MethodBase {
+    constructor() {
+        super(...arguments);
+        this.declarationInit = null;
+    }
     //declare method: boolean;
     get method() {
-        return isFlagSet(this.flags, 262144 /* Flag.method */);
+        return (this.flags & 262144 /* Flag.method */) !== 0;
     }
     set method(value) {
-        this.flags = setFlag(this.flags, 262144 /* Flag.method */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~262144 /* Flag.method */) | (-value & 262144 /* Flag.method */);
     }
     //declare shorthand: boolean;
     get shorthand() {
-        return isFlagSet(this.flags, 524288 /* Flag.shorthand */);
+        return (this.flags & 524288 /* Flag.shorthand */) !== 0;
     }
     set shorthand(value) {
-        this.flags = setFlag(this.flags, 524288 /* Flag.shorthand */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~524288 /* Flag.shorthand */) | (-value & 524288 /* Flag.shorthand */);
     }
     declare(kind, init) {
         this.declarationInit = init;
@@ -12195,7 +12255,7 @@ class Property extends MethodBase {
     }
     applyDeoptimizations() {
         this.deoptimized = true;
-        if (this.declarationInit !== undefined) {
+        if (this.declarationInit !== null) {
             this.declarationInit.deoptimizePath([UnknownKey, UnknownKey]);
             this.context.requestTreeshakingPass();
         }
@@ -12204,10 +12264,11 @@ class Property extends MethodBase {
 
 class PropertyDefinition extends NodeBase {
     get computed() {
-        return isFlagSet(this.flags, 1024 /* Flag.computed */);
+        return (this.flags & 1024 /* Flag.computed */) !== 0;
     }
     set computed(value) {
-        this.flags = setFlag(this.flags, 1024 /* Flag.computed */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~1024 /* Flag.computed */) | (-value & 1024 /* Flag.computed */);
     }
     deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker) {
         this.value?.deoptimizeArgumentsOnInteractionAtPath(interaction, path, recursionTracker);
@@ -12425,7 +12486,7 @@ class SwitchStatement extends NodeBase {
             context.hasBreak = false;
             context.brokenFlow = brokenFlow;
         }
-        if (this.defaultCase !== undefined) {
+        if (this.defaultCase !== null) {
             context.brokenFlow = onlyHasBrokenFlow;
         }
         ignore.breaks = breaks;
@@ -12439,7 +12500,7 @@ class SwitchStatement extends NodeBase {
         context.hasBreak = false;
         let onlyHasBrokenFlow = true;
         let isCaseIncluded = includeChildrenRecursively ||
-            (this.defaultCase !== undefined && this.defaultCase < this.cases.length - 1);
+            (this.defaultCase !== null && this.defaultCase < this.cases.length - 1);
         for (let caseIndex = this.cases.length - 1; caseIndex >= 0; caseIndex--) {
             const switchCase = this.cases[caseIndex];
             if (switchCase.included) {
@@ -12461,19 +12522,19 @@ class SwitchStatement extends NodeBase {
                 onlyHasBrokenFlow = brokenFlow;
             }
         }
-        if (isCaseIncluded && this.defaultCase !== undefined) {
+        if (isCaseIncluded && this.defaultCase !== null) {
             context.brokenFlow = onlyHasBrokenFlow;
         }
         context.hasBreak = hasBreak;
     }
     initialise() {
         for (let caseIndex = 0; caseIndex < this.cases.length; caseIndex++) {
-            if (this.cases[caseIndex].test === undefined) {
+            if (this.cases[caseIndex].test === null) {
                 this.defaultCase = caseIndex;
                 return;
             }
         }
-        this.defaultCase = undefined;
+        this.defaultCase = null;
     }
     parseNode(esTreeNode) {
         this.discriminant = new (this.context.getNodeConstructor(esTreeNode.discriminant.type))(esTreeNode.discriminant, this, this.parentScope);
@@ -12550,7 +12611,7 @@ class TaggedTemplateExpression extends CallExpressionBase {
         this.context.requestTreeshakingPass();
     }
     getReturnExpression(recursionTracker = SHARED_RECURSION_TRACKER) {
-        if (this.returnExpression === undefined) {
+        if (this.returnExpression === null) {
             this.returnExpression = UNKNOWN_RETURN_EXPRESSION;
             return (this.returnExpression = this.tag.getReturnExpressionWhenCalledAtPath(EMPTY_PATH, this.interaction, recursionTracker, this));
         }
@@ -12560,10 +12621,11 @@ class TaggedTemplateExpression extends CallExpressionBase {
 
 class TemplateElement extends NodeBase {
     get tail() {
-        return isFlagSet(this.flags, 1048576 /* Flag.tail */);
+        return (this.flags & 1048576 /* Flag.tail */) !== 0;
     }
     set tail(value) {
-        this.flags = setFlag(this.flags, 1048576 /* Flag.tail */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~1048576 /* Flag.tail */) | (-value & 1048576 /* Flag.tail */);
     }
     // Do not try to bind value
     bind() { }
@@ -12743,15 +12805,14 @@ class ThisExpression extends NodeBase {
         }
     }
     initialise() {
-        if (this.scope.findLexicalBoundary() instanceof ModuleScope) {
-            this.alias = this.context.moduleContext;
-        }
+        this.alias =
+            this.scope.findLexicalBoundary() instanceof ModuleScope ? this.context.moduleContext : null;
         if (this.alias === 'undefined') {
             this.context.log(LOGLEVEL_WARN, logThisIsUndefined(), this.start);
         }
     }
     render(code) {
-        if (this.alias !== undefined) {
+        if (this.alias !== null) {
             code.overwrite(this.start, this.end, this.alias, {
                 contentOnly: false,
                 storeName: true
@@ -12781,6 +12842,7 @@ class TryStatement extends NodeBase {
     constructor() {
         super(...arguments);
         this.directlyIncluded = false;
+        this.includedLabelsAfterBlock = null;
     }
     hasEffects(context) {
         return ((this.context.options.treeshake.tryCatchDeoptimization
@@ -12805,7 +12867,7 @@ class TryStatement extends NodeBase {
                 includedLabels.add(label);
             }
         }
-        if (this.handler !== undefined) {
+        if (this.handler !== null) {
             this.handler.include(context, includeChildrenRecursively);
             context.brokenFlow = brokenFlow;
         }
@@ -12824,10 +12886,11 @@ const unaryOperators = {
 };
 class UnaryExpression extends NodeBase {
     get prefix() {
-        return isFlagSet(this.flags, 2097152 /* Flag.prefix */);
+        return (this.flags & 2097152 /* Flag.prefix */) !== 0;
     }
     set prefix(value) {
-        this.flags = setFlag(this.flags, 2097152 /* Flag.prefix */, value);
+        const oldFlag = this.flags;
+        this.flags = (oldFlag & ~2097152 /* Flag.prefix */) | (-value & 2097152 /* Flag.prefix */);
     }
     getLiteralValueAtPath(path, recursionTracker, origin) {
         if (path.length > 0)
